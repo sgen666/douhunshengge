@@ -1129,26 +1129,51 @@ qqInput.addEventListener("input", () => {
   qqInput.classList.toggle("is-invalid", qqInput.value.length > 0 && !ok);
 });
 
-document.getElementById("signupForm").addEventListener("submit", e => {
+const SUPABASE_URL = "https://pccjmhmepopokwdsqqin.supabase.co";
+const SUPABASE_KEY = "sb_publishable_x8e01E-IHLQYuJllqaMfhg_p14ESHmW";
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+document.getElementById("signupForm").addEventListener("submit", async e => {
   e.preventDefault();
   const username = document.getElementById("username").value.trim();
   const qq = qqInput.value.trim();
+  const experience = document.getElementById("experience").value.trim();
+  const reason = document.getElementById("reason").value.trim();
+
   if (!username || !/^[0-9]{5,12}$/.test(qq)) {
     qqInput.classList.add("is-invalid");
     showToast("请填写完整的游戏 ID 和 QQ 号");
     return;
   }
+
   submitBtn.disabled = true;
   submitBtn.textContent = "提交中…";
-  setTimeout(() => {
-    submitBtn.disabled = false;
-    submitBtn.textContent = "提交申请";
-    signupCard.style.display = "none";
-    successCard.classList.add("show");
-    copyText("860802374");
-    e.target.reset();
-    qqInput.classList.remove("is-invalid");
-  }, 420);
+
+  const note = [
+    experience ? "经验：" + experience : "",
+    reason ? "理由：" + reason : ""
+  ].filter(Boolean).join("  |  ");
+
+  const { error } = await db.from("signups").insert({
+    name: username,
+    phone: qq,
+    note: note
+  });
+
+  submitBtn.disabled = false;
+  submitBtn.textContent = "提交申请";
+
+  if (error) {
+    console.error(error);
+    showToast("提交失败，请稍后重试");
+    return;
+  }
+
+  signupCard.style.display = "none";
+  successCard.classList.add("show");
+  copyText("860802374");
+  e.target.reset();
+  qqInput.classList.remove("is-invalid");
 });
 
 window.addEventListener("scroll", () => {
